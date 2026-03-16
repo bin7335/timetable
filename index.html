@@ -374,7 +374,7 @@ function getBadgeClass(prog) {
 }
 
 function getInitials(name) {
-  return name.length >= 2 ? name[0] + name[name.length - 1] : name[0];
+  return name.slice(1); // 첫 글자(성) 제거 → 나머지(이름)
 }
 
 function showError(msg) {
