@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방과후 개인별 시간표 조회</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* 헤더 */
+  .page-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+  }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .page-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 6px;
+  }
+
+  /* 폼 카드 */
+  .form-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    margin-bottom: 1rem;
+  }
+
+  .field { margin-bottom: 1.1rem; }
+  .field:last-of-type { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  select, input[type="text"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #1a1a2e;
+    background: #fff;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  select:focus, input:focus {
+    outline: none;
+    border-color: #4a90d9;
+    box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+  }
+
+  .btn-search {
+    width: 100%;
+    padding: 13px;
+    background: #4a90d9;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1.1rem;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-search:hover { background: #2e6db4; }
+  .btn-search:active { transform: scale(0.98); }
+
+  /* 오류 메시지 */
+  .error-msg {
+    display: none;
+    padding: 12px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #991b1b;
+    font-size: 14px;
+    margin-bottom: 1rem;
+  }
+  .error-msg.show { display: block; }
+
+  /* 결과 카드 */
+  .result-card {
+    display: none;
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  .result-card.show { display: block; }
+
+  .result-header {
+    padding: 1rem 1.25rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .student-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #dbeafe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d4ed8;
+    flex-shrink: 0;
+  }
+  .student-info-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+  .student-info-grade {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  /* 시간표 테이블 */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 420px;
+  }
+  thead th {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    padding: 10px 8px;
+    text-align: center;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  thead th.th-time { width: 130px; font-size: 12px; }
+
+  tbody td {
+    padding: 12px 6px;
+    text-align: center;
+    font-size: 13px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #f9fafb; }
+
+  .td-time {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .td-time strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  /* 프로그램 뱃지 */
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-0 { background: #dbeafe; color: #1d4ed8; }
+  .badge-1 { background: #dcfce7; color: #166534; }
+  .badge-2 { background: #fef9c3; color: #854d0e; }
+  .badge-3 { background: #ede9fe; color: #5b21b6; }
+  .badge-4 { background: #fce7f3; color: #9d174d; }
+  .badge-5 { background: #ffedd5; color: #9a3412; }
+  .badge-6 { background: #e0f2fe; color: #0c4a6e; }
+  .badge-7 { background: #f0fdf4; color: #14532d; }
+
+  /* 로딩 */
+  .loading-msg {
+    display: none;
+    text-align: center;
+    padding: 1.5rem;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  .loading-msg.show { display: block; }
+
+  /* 안내 footer */
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 1rem 0.75rem; }
+    .form-card { padding: 1.25rem; }
+    .page-header h1 { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-header">
+    <h1>📋 개인별 시간표 조회</h1>
+    <p>학년, 이름, 연락처 뒷 4자리를 입력하면 시간표를 확인할 수 있습니다.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="field">
+      <label>학년</label>
+      <select id="gradeSelect">
+        <option value="">-- 학년/반을 선택하세요 --</option>
+        <option>1학년1반</option>
+        <option>1학년2반</option>
+        <option>2학년1반</option>
+        <option>2학년2반</option>
+        <option>3학년1반</option>
+        <option>3학년2반</option>
+        <option>4학년1반</option>
+        <option>4학년2반</option>
+        <option>5학년1반</option>
+        <option>6학년1반</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>학생 이름</label>
+      <input type="text" id="nameInput" placeholder="이름을 입력하세요" />
+    </div>
+    <div class="field">
+      <label>학부모 연락처 뒷 4자리</label>
+      <input type="text" id="phoneInput" placeholder="예) 3104" maxlength="4" inputmode="numeric" />
+    </div>
+    <button class="btn-search" onclick="lookup()">시간표 조회</button>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="loading-msg" id="loadingMsg">⏳ 시간표를 불러오는 중...</div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="student-avatar" id="avatarEl"></div>
+      <div>
+        <div class="student-info-name" id="studentNameEl"></div>
+        <div class="student-info-grade" id="studentGradeEl"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-time">시간</th>
+            <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="footer-note">문의: 늘봄지원실 ☎ 054-000-0000</p>
+
+</div>
+
+<script>
+// =====================================================
+// ★ 설정 영역 — 여기만 수정하세요 ★
+// =====================================================
+
+// Google Sheets 웹 게시 CSV URL
+// 방법: 시트 → 파일 → 웹에 게시 → CSV 선택 → URL 복사 후 아래에 붙여넣기
+const SHEET_CSV_URL = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';
+
+// 교시 정의
+const PERIODS = [
+  { label: '5교시', time: '13:00~13:40' },
+  { label: '6교시', time: '13:50~14:30' },
+  { label: '7교시', time: '14:40~15:20' },
+  { label: '8교시', time: '15:30~16:10' },
+];
+
+const DAYS = ['월', '화', '수', '목', '금'];
+
+// =====================================================
+// Google Sheets CSV 파싱
+// CSV 컬럼 순서: 학년반, 이름, 연락처뒷4자리, 교시(숫자), 요일, 프로그램명
+// 예) 1학년1반,금도윤,3104,5,수,풋살A
+//     1학년1반,금도윤,3104,6,월,토탈공예B
+// =====================================================
+
+let cachedData = null;
+
+async function fetchSheetData() {
+  if (cachedData) return cachedData;
+
+  const res = await fetch(SHEET_CSV_URL);
+  const text = await res.text();
+  const lines = text.trim().split('\n').slice(1); // 첫 줄(헤더) 제거
+
+  const records = [];
+  lines.forEach(line => {
+    const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    if (cols.length < 6 || !cols[0]) return;
+    records.push({
+      grade:   cols[0],
+      name:    cols[1],
+      phone:   cols[2],
+      period:  parseInt(cols[3]),
+      day:     cols[4],
+      program: cols[5],
+    });
+  });
+
+  cachedData = records;
+  return records;
+}
+
+// =====================================================
+// 조회 로직
+// =====================================================
+
+const colorMap = {};
+let colorIdx = 0;
+
+function getBadgeClass(prog) {
+  if (!prog) return '';
+  if (!colorMap[prog]) {
+    colorMap[prog] = 'badge-' + (colorIdx % 8);
+    colorIdx++;
+  }
+  return colorMap[prog];
+}
+
+function getInitials(name) {
+  return name.length >= 2 ? name[0] + name[name.length - 1] : name[0];
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('show');
+}
+function showLoading(v) {
+  document.getElementById('loadingMsg').classList.toggle('show', v);
+}
+function showResult(v) {
+  document.getElementById('resultCard').classList.toggle('show', v);
+}
+
+async function lookup() {
+  const grade = document.getElementById('gradeSelect').value.trim();
+  const name  = document.getElementById('nameInput').value.trim();
+  const phone = document.getElementById('phoneInput').value.trim();
+
+  hideError();
+  showResult(false);
+
+  if (!grade) { showError('학년/반을 선택해주세요.'); return; }
+  if (!name)  { showError('학생 이름을 입력해주세요.'); return; }
+  if (!phone || phone.length !== 4 || isNaN(phone)) {
+    showError('연락처 뒷 4자리를 정확히 입력해주세요.');
+    return;
+  }
+
+  showLoading(true);
+
+  try {
+    const records = await fetchSheetData();
+
+    // 해당 학생 레코드 필터
+    const studentRows = records.filter(r =>
+      r.grade === grade && r.name === name && r.phone === phone
+    );
+
+    showLoading(false);
+
+    if (studentRows.length === 0) {
+      showError('일치하는 학생 정보를 찾을 수 없습니다. 학년, 이름, 연락처를 다시 확인해주세요.');
+      return;
+    }
+
+    // 그리드 구성 (교시 × 요일)
+    const grid = {};
+    PERIODS.forEach(p => {
+      grid[p.label] = {};
+      DAYS.forEach(d => grid[p.label][d] = '');
+    });
+
+    studentRows.forEach(r => {
+      const pObj = PERIODS.find(p => p.label === r.period + '교시');
+      if (pObj) grid[pObj.label][r.day] = r.program;
+    });
+
+    // 테이블 렌더링
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = PERIODS.map(p => {
+      const cells = DAYS.map(d => {
+        const prog = grid[p.label][d];
+        return prog
+          ? `<td><span class="badge ${getBadgeClass(prog)}">${prog}</span></td>`
+          : `<td></td>`;
+      }).join('');
+      return `<tr>
+        <td class="td-time"><strong>${p.label}</strong>(${p.time})</td>
+        ${cells}
+      </tr>`;
+    }).join('');
+
+    // 헤더 정보
+    document.getElementById('avatarEl').textContent = getInitials(name);
+    document.getElementById('studentNameEl').textContent = name;
+    document.getElementById('studentGradeEl').textContent =
+      grade + ' · 수강 프로그램 ' + studentRows.length + '개';
+
+    showResult(true);
+
+  } catch (e) {
+    showLoading(false);
+    showError('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+    console.error(e);
+  }
+}
+
+// 엔터키 조회
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookup();
+});
+</script>
+
+</body>
+</html>
