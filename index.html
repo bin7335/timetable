@@ -271,7 +271,7 @@
     </div>
     <div class="field">
       <label>학부모 연락처 뒷 4자리</label>
-      <input type="text" id="phoneInput" placeholder="예) 3104" maxlength="4" inputmode="numeric" />
+      <input type="text" id="phoneInput" placeholder="예) 1234" maxlength="4" inputmode="numeric" />
     </div>
     <button class="btn-search" onclick="lookup()">시간표 조회</button>
   </div>
@@ -310,7 +310,6 @@
 // =====================================================
 
 // Google Sheets 웹 게시 CSV URL
-// 방법: 시트 → 파일 → 웹에 게시 → CSV 선택 → URL 복사 후 아래에 붙여넣기
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8YMvV4VDViifRLd0prK_8YGN-pzyA6wAfmCzCozK_usoboXhiexgnRn1txX95mjcnReBmurcvEwB6/pub?output=csv';
 
 // 교시 정의
@@ -326,8 +325,8 @@ const DAYS = ['월', '화', '수', '목', '금'];
 // =====================================================
 // Google Sheets CSV 파싱
 // CSV 컬럼 순서: 학년반, 이름, 연락처뒷4자리, 교시(숫자), 요일, 프로그램명
-// 예) 1학년1반,금도윤,3104,5,수,풋살A
-//     1학년1반,금도윤,3104,6,월,토탈공예B
+// 예) 1학년1반,홍길동,1234,5,수,풋살A
+//     1학년1반,홍길동,1234,6,월,토탈공예B
 // =====================================================
 
 let cachedData = null;
